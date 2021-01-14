@@ -8,27 +8,28 @@ get_variable_name <- function(var) {
     deparse(substitute(var))
 }
 
-save_widget <- function(network) {
-    saveWidget(network,
-        file = here(
-            "output",
-            "html_widget",
-            paste0(get_variable_name(network), ".html")
-        )
+save_widget <- function(network, file_name) {
+    output_path <- here(
+        "output",
+        "html_widget",
+        paste0(file_name, ".html")
     )
+    print(paste0("Saving File to: ", output_path))
+    saveWidget(network, file = output_path)
 }
 output_directory <- here("output")
 
-network_df <- read_csv("output/preprocessed_data.csv")
-author_df <- read_csv("output/authors.csv")
+network_df <- read_csv("intermediate/preprocessed_data.csv")
+author_df <- read_csv("intermediate/authors.csv")
 
-data <- igraph::graph_from_data_frame(d = network_df[1:100, ], directed = FALSE)
+author_df$group <- 0
 
-my_data <- as.data.frame(network_df)
-simple_network <- simpleNetwork(my_data, Source = 1, Target = 2, zoom = TRUE)
+sampled_network_df <- network_df[sample(nrow(network_df), 1000), ]
+
+simple_network <- simpleNetwork(sampled_network_df, Source = 1, Target = 2, zoom = TRUE)
 
 force_network <- forceNetwork(
-    Links = my_data,
+    Links = network_df,
     Nodes = author_df,
     Source = "author_id_x",
     Target = "author_id_y",
@@ -39,4 +40,5 @@ force_network <- forceNetwork(
 )
 
 
-save_widget(force_network)
+file_name <- get_variable_name(simple_network)
+save_widget(simple_network, file_name)

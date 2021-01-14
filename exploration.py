@@ -1,5 +1,6 @@
 # %%
 import pandas as pd
+import numpy as np
 import pathlib
 import json
 import tqdm
@@ -45,7 +46,15 @@ a_df["author_name_len"].hist(bins=list(range(40)))
 
 
 # %%
-df_combined = (
+# can we filter out authors that are not relevant
+ac_df = pd.DataFrame(df.groupby("author_name")["id"].count()).reset_index()
+
+ac_df["id"].hist(bins=list(range(10)))  # authors that have never worked with anybody?
+
+# TODO: papers with only one contributor
+
+# %%
+combined_df = (
     pd.merge(df, df, how="inner", on="id")  # join df onto itself
     .pipe(lambda m_df: m_df.loc[m_df.author_id_x < m_df.author_id_y])
     .groupby(["author_id_x", "author_id_y"])[["id"]]
@@ -56,10 +65,27 @@ df_combined = (
 )
 
 # %%
+_cols = ["author_id", "num_collaborators"]
+x_df = pd.DataFrame(
+    combined_df.groupby("author_id_x")["author_id_y"].nunique()
+).reset_index()
+y_df = pd.DataFrame(
+    combined_df.groupby("author_id_y")["author_id_x"].nunique()
+).reset_index()
+
+x_df.columns = y_df.columns = _cols
+
+z_df = x_df.append(y_df)
+
+z_df.groupby("author_id")["num_collaborators"].sum().hist(
+    bins=list(range(20))
+)  # number of collaborators...
+
+# %%
 # write processed output
 output_dir = pathlib.Path(__file__).absolute().parent / "output"
 output_dir.mkdir(exist_ok=True)
 
 print(f"Writing output to {output_dir}")
-df_combined.to_csv(output_dir / "preprocessed_data.csv", header=True, index=False)
+combined_df.to_csv(output_dir / "preprocessed_data.csv", header=True, index=False)
 authors_df.to_csv(output_dir / "authors.csv", header=True, index=False)

@@ -7,12 +7,12 @@ import tqdm
 if __name__ == "__main__":
 
     print(f"Script {__file__} started")
-    arxiv_json_filepath = "arxiv-metadata-oai-snapshot.json"
+    arxiv_json_filepath = "input/arxiv-metadata-oai-snapshot.json"
 
     data = []
     num_lines_in_file = sum(1 for _ in open(arxiv_json_filepath))
     num_lines_to_read = num_lines_in_file
-    num_lines_to_read = 100_000
+    num_lines_to_read = 1_000
 
     assert 0 < num_lines_to_read <= num_lines_in_file
 
@@ -25,11 +25,15 @@ if __name__ == "__main__":
 
     df = df.explode("authors_parsed")
 
-    df["author_id"] = (
-        df["authors_parsed"].map(lambda l: " ".join(l)).map(hash)
-    )  # TODO: use pd.factorize instead
-    df["author_name"] = df["authors_parsed"].map(lambda l: ", ".join(l))
+    df = df.explode("authors_parsed")
+    df = df.reset_index(drop=True)
 
+    df["author_name"] = df["authors_parsed"].map(lambda l: " ".join(l))
+
+    # factorize
+    df["author_id"] = pd.factorize(df["author_name"])[0]
+
+    authors_df = df[["author_name", "author_id"]].drop_duplicates()
     authors_df = df[["author_name", "author_id"]].drop_duplicates()
 
     df_combined = (
