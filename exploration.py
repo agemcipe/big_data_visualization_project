@@ -16,24 +16,71 @@ num_lines_to_read = 10_000
 
 assert 0 < num_lines_to_read <= num_lines_in_file
 
+fields_to_extract = ["id", "authors_parsed", "categories"]
 with open(arxiv_json_filepath) as json_file:
     for i in tqdm.tqdm(range(num_lines_to_read)):
         _dict = json.loads(json_file.readline())
-        data.append([_dict.get("id"), _dict.get("authors_parsed")])
+        data.append([_dict.get(field_name) for field_name in fields_to_extract])
 # %%
-df = pd.DataFrame(data, columns=["id", "authors_parsed"])
+df = pd.DataFrame(data, columns=fields_to_extract)
 
 
 # %%
 df = df.explode("authors_parsed")
 df = df.reset_index(drop=True)
 
-df["author_name"] = df["authors_parsed"].map(lambda l: " ".join(l))
+df["author_name"] = df["authors_parsed"].map(lambda l: " ".join(l).strip())
 
 # factorize
 df["author_id"] = pd.factorize(df["author_name"])[0]
 
-authors_df = df[["author_name", "author_id"]].drop_duplicates()
+# %% What
+
+authors_df = df[["author_name", "author_id", "categories"]]
+
+authors_df["categories"] = authors_df["categories"].str.split(" ")
+
+authors_df = authors_df.explode("categories")
+
+authors_df["categories_first"] = (
+    authors_df["categories"].str.split(".").map(lambda x: x[0])
+)
+# %%
+authors_df["categories"].value_counts().plot(kind="bar", figsize=(25, 8))
+
+# %%
+# let's condense the categories
+authors_df["categories_first"].value_counts().plot(kind="bar", figsize=(25, 8))
+
+# %%
+authors_df["category_first_count"] = authors_df.groupby(
+    ["author_name", "author_id", "categories_first"]
+).transform(lambda x: x.count())
+
+# %%
+
+# drop categories
+authors_df = authors_df.drop(columns="categories")
+authors_df = authors_df.drop_duplicates()
+authors_df.head()
+
+# authors_df = df[["author_name", "author_id"]].drop_duplicates()
+# %%
+# get mode of categories, maybe there is better way? takes a while to compute
+
+at_df = authors_df.drop(columns="category_first_count")
+at_df.drop_duplicates()
+
+at_df = (
+    at_df.groupby(["author_name", "author_id", "categories_first"])
+    .apply(pd.DataFrame.mode)
+    .reset_index(drop=True)
+)
+
+# %%
+# there are still a lot of authors that can belong to more than one high level category.... for now let's just pick randomly TODO!!
+at_df = at_df.drop_duplicates(subset=["author_name", "author_id"])
+
 
 # %%
 # TODO: investigate "cleanness" of author_name
@@ -43,6 +90,10 @@ a_df["author_name_len"] = a_df["author_name"].str.len()
 a_df.sort_values("author_name_len").head()
 
 a_df["author_name_len"].hist(bins=list(range(40)))
+
+# different spellings of name / Usage of Initals / One finding
+# example:
+authors_df[authors_df.author_name.str.startswith("Kontani")]
 
 
 # %%
@@ -83,9 +134,13 @@ z_df.groupby("author_id")["num_collaborators"].sum().hist(
 
 # %%
 # write processed output
-output_dir = pathlib.Path(__file__).absolute().parent / "output"
+output_dir = pathlib.Path(__file__).absolute().parent / "intermediate"
 output_dir.mkdir(exist_ok=True)
-
+# %%
 print(f"Writing output to {output_dir}")
 combined_df.to_csv(output_dir / "preprocessed_data.csv", header=True, index=False)
-authors_df.to_csv(output_dir / "authors.csv", header=True, index=False)
+
+# %%
+at_df.to_csv(output_dir / "authors.csv", header=True, index=False)
+
+# %%
