@@ -22,20 +22,46 @@ save_widget <- function(network, file_name) {
 
 full_network_df <- read_csv("intermediate/preprocessed_data.csv")
 full_author_df <- read_csv("intermediate/authors.csv")
-author_df$idx <- seq.int(nrow(author_df)) - 1
+full_author_df$idx <- seq.int(nrow(full_author_df)) - 1
 
 # sampled_network_df <- network_df[sample(nrow(network_df), 2000), ]
 
 # select some observations
-selected_network_df <- full_network_df[full_network_df$author_id_x < 250, ]
 
-selected_author_df <- author_df[
-    author_df$author_id %in% (
+# preselected_author <- full_author_df[sample(nrow(full_author_df), 500), ]
+preselected_author <- full_author_df[full_author_df$categories_first == "astro-ph",]
+
+preselected_author <- preselected_author[sample(nrow(preselected_author), nrow(preselected_author) / 4), ]
+
+selected_network_df <- full_network_df[
+    (full_network_df$author_id_x %in% preselected_author$author_id) |
+    (full_network_df$author_id_x %in% preselected_author$author_id), 
+]
+
+author_id_x_cnt = selected_network_df %>%
+    group_by(author_id_x) %>%
+    summarise(auth_cnt_publications = sum(cnt_publications)) %>%
+    rename(author_id = author_id_x)
+author_id_y_cnt = selected_network_df %>%
+    group_by(author_id_y) %>%
+    summarise(auth_cnt_publications = sum(cnt_publications)) %>%
+    rename(author_id = author_id_y)
+
+author_pub_cnt = author_id_x_cnt %>%
+    bind_rows(author_id_y_cnt) %>%
+    group_by(author_id) %>%
+    summarise(auth_cnt_publications = sum(auth_cnt_publications))
+
+selected_author_df <- full_author_df[
+    full_author_df$author_id %in% (
         c(
             selected_network_df$author_id_x,
             selected_network_df$author_id_y
         ) %>% unique()),
 ]
+selected_author_df <- selected_author_df %>%
+    inner_join(author_pub_cnt)
+
 selected_author_df$idx <- seq.int(nrow(selected_author_df)) - 1
 
 joined <- selected_network_df %>%
@@ -58,8 +84,11 @@ force_network <- forceNetwork(
     Value = "cnt_publications",
     NodeID = "author_name",
     Group = "categories_first",
-    zoom = TRUE,
-    opacity = 0.8
+    Nodesize = "auth_cnt_publications",
+    radiusCalculation = JS("Math.sqrt(d.nodesize)+6"),
+    linkDistance = JS("function(d){return 100/(d.value)}"),
+    linkWidth = JS("function(d) { return Math.pow(d.value, 2); }"),
+    zoom = TRUE
 )
 
 force_network
@@ -69,12 +98,12 @@ save_widget(force_network, file_name)
 
 
 #################### TEST ##################
-data(MisLinks)
+data(MisLinksagemcipe/data_processes_mlcolonoscopy)
 data(MisNodes)
 
 forceNetwork(
     Links = MisLinks, Nodes = MisNodes,
     Source = "source", Target = "target",
     Value = "value", NodeID = "name",
-    Group = "group", opacity = 0.8, zoom = TRUE
+    Group = "group", zoom = TRUE
 )
