@@ -35,7 +35,6 @@ def append_dict_to_file(dict, output_file):
 
 def process_chunk(author_name_ls):
     pg = ProxyGenerator()
-    # needs to have tor enabled
     pg.Tor_External(tor_sock_port=9050, tor_control_port=9051, tor_password="scholarly_password")
     scholarly.use_proxy(pg)
 

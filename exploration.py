@@ -144,37 +144,7 @@ combined_df.to_csv(output_dir / "preprocessed_data.csv", header=True, index=Fals
 at_df.to_csv(output_dir / "authors.csv", header=True, index=False)
 
 # %%
-from scholarly import scholarly
-
 # %%
-empty_search = {
-    "container_type": None,
-    "filled": None,
-    "source": None,
-    "scholar_id": None,
-    "url_picture": None,
-    "name": None,
-    "affiliation": None,
-    "email_domain": None,
-    "interests": None,
-    "citedby": None,
-}
-
-
-def fail_safe_search_author(search_term):
-    try:
-        return next(scholarly.search_author(search_term))
-    except StopIteration:
-        return empty_search
-
-
+rdf = df.groupby("author_name")["id"].nunique().to_frame().sort_values(by="id", ascending=False).reset_index()
 # %%
-tdf = authors_df.sample(10).copy()
-tdf
-# %%
-scholar_data = [fail_safe_search_author(name) for name in tdf["author_name"]]
-
-
-# %%
-rdf = df.groupby("author_name")["id"].nunique().to_frame().sort_values(by="id", ascending=False)
-# %%
+rdf.head()
