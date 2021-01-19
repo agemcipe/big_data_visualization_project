@@ -176,3 +176,5 @@ scholar_data = [fail_safe_search_author(name) for name in tdf["author_name"]]
 
 
 # %%
+rdf = df.groupby("author_name")["id"].nunique().to_frame().sort_values(by="id", ascending=False)
+# %%

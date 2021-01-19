@@ -42,3 +42,6 @@ vignettes/*.pdf
 input/
 output/
 intermediate/
+
+# Log files
+*.log
