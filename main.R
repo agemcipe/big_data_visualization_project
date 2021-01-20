@@ -52,7 +52,7 @@ full_author_df$membership <- full_comp$membership
 
 # select some observations
 #################### by author name #################
-search_name <- "David Smith" # "Haas Martin" # "Eisermann M"   # "Marwala T."
+search_name <- "Marwala T." # "David Smith" # "Haas Martin" # "Eisermann M"   # ""
 preselected_author <- full_author_df %>% filter(
     (author_name == search_name) | (name == search_name)
 )
@@ -71,19 +71,28 @@ if (nrow(preselected_author) > 1) {
 
 
 ###################### BY category ########################
-# preselected_author <- full_author_df[full_author_df$categories_first == "cs",]
-
+preselected_author <- full_author_df[full_author_df$categories_first == "astro-ph",]
+ preselected_author <- preselected_author[sample(nrow(preselected_author), 500), ]
 
 ##################### Randomly ########################
 # preselected_author <- full_author_df[sample(nrow(full_author_df), 500), ]
 
+
+##################### BY university / email domain ########################
+# search_email_domain <- "@upm.es"
+# preselected_author <- full_author_df %>% filter(
+#     email_domain == search_email_domain
+# )
+
 #################### Subselect network ####################
+
+# every author in the preselected_author_df
 selected_network_df <- full_network_df[
     (full_network_df$author_id_x %in% preselected_author$author_id) |
     (full_network_df$author_id_y %in% preselected_author$author_id), 
 ]
 
-# other way: every node that is in the same component
+# other way: every node that is in the same component (connected subgraph)
 authors_in_same_comp <- full_author_df[
     full_author_df$membership %in% preselected_author$membership,
 ]
@@ -148,10 +157,12 @@ com <- components(g)
 
 selected_author_df$membership <- com$membership
 
-# FILTERING ONLY CONNECTED COMPONENTS
-min_component_size = 1
+# filtering out small components
+min_component_size = 5
 
-filtered_selected_author_df <- selected_author_df[selected_author_df$membership %in% which(com$csize > min_component_size),]
+filtered_selected_author_df <- selected_author_df[
+    selected_author_df$membership %in% which(com$csize > min_component_size),
+]
 
 filtered_selected_author_df$idx <- seq.int(nrow(filtered_selected_author_df)) - 1
 
@@ -159,6 +170,7 @@ filtered_joined <- selected_network_df %>%
     inner_join(filtered_selected_author_df[, c("author_id", "idx")], by = c("author_id_x" = "author_id")) %>%
     inner_join(filtered_selected_author_df[, c("author_id", "idx")], by = c("author_id_y" = "author_id"))
 
+############# Create force network 
 
 ColourScale <- 'd3.scaleOrdinal()
             .domain(["cs", "stat"])
@@ -186,16 +198,5 @@ file_name <- get_variable_name(force_network)
 save_widget(force_network, file_name)
 
 
+# display force_network in IDE
 force_network
-#################### TEST ##################
-data(MisLinksagemcipe/data_processes_mlcolonoscopy)
-data(MisNodes)
-
-forceNetwork(
-    Links = MisLinks, Nodes = MisNodes,
-    Source = "source", Target = "target",
-    Value = "value", NodeID = "name",
-    Group = "group", zoom = TRUE
-)
-
-################## Clusters #################
