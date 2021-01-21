@@ -33,8 +33,37 @@ join_links_and_nodes <- function(links_df, author_df) {
     return(joined)
 }
 
-links_from_author_df <- function(author_df) {
+filter_by_author_and_neighbors <- function(author_df, authors, order, full_graph) {
+    filtered_author <- author_df %>% filter(
+        (author_name %in% authors) | (name %in% authors)
+    )
+    neighbors_idx_1 <- ego(full_graph, order = order, nodes = filtered_author$idx_1, mindist = 0)
     
+    filtered_idx_1 <- as_ids(neighbors_idx_1[[1]])
+    for (vertex_list in neighbors_idx_1[-1]) {
+        filtered_idx_1 <- c(filtered_idx_1, as_ids(vertex_list))
+    }
+    
+    filtered_author_df <- author_df %>% filter(
+        idx_1 %in% filtered_idx_1)
+    return(filtered_author_df)
+}
+
+prepare_final_links_from_selected_author_df <- function(network_df, author_df) {
+    final_network_df <- network_df[
+        (network_df$author_id_x %in% author_df$author_id) |
+            (network_df$author_id_y %in% author_df$author_id), 
+    ]
+    
+    author_df$idx <- seq.int(nrow(author_df)) - 1
+    
+    final_network_df <- final_network_df %>%
+        inner_join(author_df[, c("author_id", "idx")], by = c("author_id_x" = "author_id")) %>%
+        inner_join(author_df[, c("author_id", "idx")], by = c("author_id_y" = "author_id"))
+ 
+    links_and_nodes <- list("links" = final_network_df, "nodes" = author_df)
+    
+    return(links_and_nodes)
 }
 
 full_network_df <- read_csv("intermediate/preprocessed_data.csv")
@@ -53,36 +82,20 @@ full_comp <- components(full_graph)
 full_author_df$membership <- full_comp$membership
 
 #################### by author name #################
-search_name <- "Marwala T." # "David Smith" # "Haas Martin" # "Eisermann M"   # ""
-preselected_author <- full_author_df %>% filter(
-    (author_name == search_name) | (name == search_name)
-)
+authors <- list("Marwala T.", "Haas Martin") # "David Smith") # "Haas Martin" # "Eisermann M"   # ""
+order_of_neighborhood = 5
 
-V(full_graph)
-neighbors_idx_1 <- ego(full_graph, order = 3, nodes = preselected_author$idx_1, mindist = 0)
-preselected_author_df <- full_author_df %>% filter(
-    idx_1 %in% neighbors_idx_1[[1]])
+filtered_author_df <- filter_by_author_and_neighbors(full_author_df, authors, order_of_neighborhood, full_graph)
 
-# every author in the preselected_author_df
-selected_network_df <- full_network_df[
-    (full_network_df$author_id_x %in% preselected_author_df$author_id) |
-        (full_network_df$author_id_y %in% preselected_author_df$author_id), 
-]
-
-preselected_author_df$idx <- seq.int(nrow(preselected_author_df)) # - 1
-
-joined <- selected_network_df %>%
-    inner_join(preselected_author_df[, c("author_id", "idx")], by = c("author_id_x" = "author_id")) %>%
-    inner_join(preselected_author_df[, c("author_id", "idx")], by = c("author_id_y" = "author_id"))
-
+links_and_nodes <- prepare_final_links_from_selected_author_df(full_network_df, filtered_author_df)
 
 ColourScale <- 'd3.scaleOrdinal()
             .domain(["cs", "stat"])
            .range(["#FF6900", "#694489"]);'
 
 force_network <- forceNetwork(
-    Links = joined,
-    Nodes = preselected_author_df,
+    Links = links_and_nodes$links,
+    Nodes = links_and_nodes$nodes,
     Source = "idx.x",
     Target = "idx.y",
     Value = "cnt_publications",
