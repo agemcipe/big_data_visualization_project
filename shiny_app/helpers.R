@@ -28,13 +28,17 @@ filter_by_author_and_neighbors <- function(author_df, authors, order, full_graph
   return(filtered_author_df)
 }
 
-prepare_final_links_from_selected_author_df <- function(network_df, author_df) {
+prepare_final_links <- function(network_df, author_df, for_igraph = FALSE) {
   final_network_df <- network_df[
     (network_df$author_id_x %in% author_df$author_id) |
       (network_df$author_id_y %in% author_df$author_id), 
   ]
-  
-  author_df$idx <- seq.int(nrow(author_df)) - 1
+  if(for_igraph){
+    author_df$idx <- seq.int(nrow(author_df))
+  }
+  else{
+    author_df$idx <- seq.int(nrow(author_df)) - 1
+  }
   
   final_network_df <- final_network_df %>%
     inner_join(author_df[, c("author_id", "idx")], by = c("author_id_x" = "author_id")) %>%
@@ -43,6 +47,25 @@ prepare_final_links_from_selected_author_df <- function(network_df, author_df) {
   links_and_nodes <- list("links" = final_network_df, "nodes" = author_df)
   
   return(links_and_nodes)
+}
+
+filter_out_small_connected_components <- function(network_df, author_df, min_component_size) {
+  network_df <- prepare_final_links(network_df, author_df, for_igraph = TRUE)[[1]]
+  
+  head(network_df)
+  # igraph nodes have to be 1 indexed!
+  g <- igraph::graph_from_edgelist(as.matrix(network_df[, c("idx.x", "idx.y")]), directed = FALSE) 
+  
+  com <- components(g)
+  # hist(component_distribution(g, cumulative = FALSE, mul.size = TRUE)) 
+  
+  
+  author_df$membership <- com$membership
+  
+  filtered_author_df <- author_df[
+    author_df$membership %in% which(com$csize >= min_component_size),
+  ]
+  return(filtered_author_df)
 }
 
 #### Load and prepare full dfs of links and nodes
