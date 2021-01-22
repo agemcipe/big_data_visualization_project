@@ -85,13 +85,15 @@ server <- function(input, output) {
 ui <- fluidPage(
   
   # App title ----
-  titlePanel("Hello Shiny!"),
+  titlePanel(h1("Co-author graph from the Arxiv Dataset ")),
   
   # Sidebar layout with input and output definitions ----
   sidebarLayout(
     
+    
     # Sidebar panel for inputs ----
     sidebarPanel(
+      h3("Apply filters"),
       selectizeInput("authors", label = "Select Authors", 
                      choices = full_author_df$author_name,
                      multiple = TRUE, 
@@ -123,11 +125,14 @@ ui <- fluidPage(
                   max = 10,
                   value = 1),
       
+      h3("Change aesthetics"),
+      
       # Input: Group by
       selectInput("group", label = "Select color idiom",
                   choices = list("Subject area" = "categories_first","E-mail domain" = "email_domain", 
                                 "Affilitation" = "affiliation"),
-                  selected = "categories_first")
+                  selected = "categories_first"),
+      width = 2
       
     ),
     
