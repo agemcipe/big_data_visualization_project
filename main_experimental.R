@@ -49,21 +49,44 @@ filter_by_author_and_neighbors <- function(author_df, authors, order, full_graph
     return(filtered_author_df)
 }
 
-prepare_final_links_from_selected_author_df <- function(network_df, author_df) {
+prepare_final_links <- function(network_df, author_df, for_igraph = FALSE) {
     final_network_df <- network_df[
         (network_df$author_id_x %in% author_df$author_id) |
             (network_df$author_id_y %in% author_df$author_id), 
     ]
-    
-    author_df$idx <- seq.int(nrow(author_df)) - 1
+    if(for_igraph){
+        author_df$idx <- seq.int(nrow(author_df))
+    }
+    else{
+        author_df$idx <- seq.int(nrow(author_df)) - 1
+    }
     
     final_network_df <- final_network_df %>%
         inner_join(author_df[, c("author_id", "idx")], by = c("author_id_x" = "author_id")) %>%
         inner_join(author_df[, c("author_id", "idx")], by = c("author_id_y" = "author_id"))
- 
+    
     links_and_nodes <- list("links" = final_network_df, "nodes" = author_df)
     
     return(links_and_nodes)
+}
+
+filter_out_small_connected_components <- function(network_df, author_df, min_component_size) {
+    network_df <- prepare_final_links(network_df, author_df, for_igraph = TRUE)[[1]]
+    
+    head(network_df)
+    # igraph nodes have to be 1 indexed!
+    g <- igraph::graph_from_edgelist(as.matrix(network_df[, c("idx.x", "idx.y")]), directed = FALSE) 
+    
+    com <- components(g)
+    # hist(component_distribution(g, cumulative = FALSE, mul.size = TRUE)) 
+    
+    
+    author_df$membership <- com$membership
+    
+    filtered_author_df <- author_df[
+        author_df$membership %in% which(com$csize >= min_component_size),
+    ]
+    return(filtered_author_df)
 }
 
 full_network_df <- read_csv("intermediate/preprocessed_data.csv")
@@ -85,9 +108,32 @@ full_author_df$membership <- full_comp$membership
 authors <- list("Marwala T.", "Haas Martin") # "David Smith") # "Haas Martin" # "Eisermann M"   # ""
 order_of_neighborhood = 5
 
-filtered_author_df <- filter_by_author_and_neighbors(full_author_df, authors, order_of_neighborhood, full_graph)
+filtered_author_df2 <- filter_by_author_and_neighbors(full_author_df, authors, order_of_neighborhood, full_graph)
 
-links_and_nodes <- prepare_final_links_from_selected_author_df(full_network_df, filtered_author_df)
+# network_df <- full_network_df
+# author_df <- filtered_author_df2
+# min_component_size <- 5
+# 
+# network_df <- prepare_final_links(network_df, author_df, for_igraph = TRUE)[[1]]
+# 
+# network_df[[1]]
+# head(network_df)
+# # igraph nodes have to be 1 indexed!
+# g <- igraph::graph_from_edgelist(as.matrix(network_df[, c("idx.x", "idx.y")]), directed = FALSE) 
+# 
+# com <- components(g)
+# # hist(component_distribution(g, cumulative = FALSE, mul.size = TRUE)) 
+# 
+# 
+# author_df$membership <- com$membership
+# 
+# filtered_author_df <- author_df[
+#     author_df$membership %in% which(com$csize > min_component_size),
+# ]
+
+filtered_author_df <- filter_out_small_connected_components(full_network_df, filtered_author_df2, 5)
+
+links_and_nodes <- prepare_final_links(full_network_df, filtered_author_df)
 
 ColourScale <- 'd3.scaleOrdinal()
             .domain(["cs", "stat"])

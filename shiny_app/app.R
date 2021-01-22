@@ -2,6 +2,7 @@ library(shiny)
 library(tidyverse)
 library(igraph)
 library(networkD3)
+library(shinydashboard)
 source("helpers.R")
 
 
@@ -55,8 +56,8 @@ server <- function(input, output) {
     Group = input$group,
     # Nodesize = "auth_cnt_publications",
     # radiusCalculation = JS("Math.sqrt(d.nodesize)+6"),
-    # linkDistance = JS("function(d){return 100/(d.value)}"),
-    # linkWidth = JS("function(d) { return Math.pow(d.value, 2); }"),
+    linkDistance = JS("function(d){return 100/(d.value)}"),
+    linkWidth = JS("function(d) { return Math.pow(d.value, 2); }"),
     zoom = TRUE,
     legend = TRUE,
     # colourScale = JS(ColourScale)
@@ -82,17 +83,16 @@ server <- function(input, output) {
 }
 
 # Define UI for app that draws a histogram ----
-ui <- fluidPage(
+ui <- dashboardPage(
   
   # App title ----
-  titlePanel(h1("Co-author graph from the Arxiv Dataset ")),
-  
+  #titlePanel(h1("Co-author graph from the Arxiv Dataset ")),
+  dashboardHeader(title = "Basic dashboard"),
   # Sidebar layout with input and output definitions ----
-  sidebarLayout(
     
     
     # Sidebar panel for inputs ----
-    sidebarPanel(
+    dashboardSidebar(
       h3("Apply filters"),
       selectizeInput("authors", label = "Select Authors", 
                      choices = full_author_df$author_name,
@@ -131,17 +131,16 @@ ui <- fluidPage(
       selectInput("group", label = "Select color idiom",
                   choices = list("Subject area" = "categories_first","E-mail domain" = "email_domain", 
                                 "Affilitation" = "affiliation"),
-                  selected = "categories_first"),
-      width = 2
+                  selected = "categories_first")
       
     ),
     
     # Main panel for displaying outputs ----
-    mainPanel(
+    dashboardBody(
       forceNetworkOutput(outputId = "net"),
       verbatimTextOutput('text')
     )
   )
-)
+
 
 shinyApp(ui = ui, server = server)
