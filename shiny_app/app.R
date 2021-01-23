@@ -53,15 +53,9 @@ server <- function(input, output) {
       input$min_comp
     )
   })
-  
-  regrouped_author_df <- reactive({
-    group_email_domain_endings(filtered_author_df())
-  })
 
   links <- reactive({
-    final_author_df = regrouped_author_df()
-    print(final_author_df$email_domain_end)
-    print(n_distinct(final_author_df$email_domain_end))
+    final_author_df = filtered_author_df()
     validate(
       need(nrow(final_author_df) > input$max_num_nodes, cat('You have selected', nrow(filtered_author_df),'nodes. Please select less than ', input$max_num_nodes, ' nodes.'))
     )
