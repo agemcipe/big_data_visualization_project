@@ -43,6 +43,10 @@ server <- function(input, output) {
   })
 
   filtered_author_df <- reactive({
+    
+    validate(
+      need(nrow(filtered_by_subject_author_df()) != 0, "You have selected 0 nodes. Please choose different filter options.")
+    )
     filter_out_small_connected_components(
       full_network_df,
       filtered_by_subject_author_df(),
@@ -51,8 +55,19 @@ server <- function(input, output) {
   })
 
   links <- reactive({
-    links_and_nodes <- prepare_final_links(full_network_df, filtered_author_df())
-    links_and_nodes$links
+    final_author_df = filtered_author_df()
+    validate(
+      need(nrow(final_author_df) > input$max_num_nodes, cat('You have selected', nrow(filtered_author_df),'nodes. Please select less than ', input$max_num_nodes, ' nodes.'))
+    )
+    if(nrow(final_author_df) > input$max_num_nodes) {
+      stop("Too many nodes.")
+      # final_author_df <- filter(author_name %in% c(''))
+    }
+    validate(
+      need(nrow(final_author_df) != 0, "You have selected 0 nodes. Please choose different filter options.")
+    )
+    links_and_nodes <- prepare_final_links(full_network_df, final_author_df)
+
   })
   
   # ColourScale <- reactive({
@@ -64,27 +79,29 @@ server <- function(input, output) {
   #   else {}
   # })
 
-  output$net <- renderForceNetwork(forceNetwork(
-    Links = as.data.frame(links()),
-    Nodes = as.data.frame(filtered_author_df()),
-    Source = "idx.x",
-    Target = "idx.y",
-    Value = "cnt_publications",
-    NodeID = "author_name",
-    fontSize = 20,
-    Group = input$group,
-    Nodesize = "total_cnt_publications",
-    radiusCalculation = JS("Math.sqrt(d.nodesize)+6"),
-    linkDistance = JS("function(d){return 100/(d.value)}"),
-    linkWidth = JS("function(d) { return Math.pow(d.value, 2); }"),
-    clickAction = on_node_click,
-    zoom = TRUE,
-    legend = TRUE# ,
-    # colourScale = JS(ColourScale())
-  ))
+  output$net <- renderForceNetwork(
+    forceNetwork(
+      Links = as.data.frame(links()$links),
+      Nodes = as.data.frame(filtered_author_df()),
+      Source = "idx.x",
+      Target = "idx.y",
+      Value = "cnt_publications",
+      NodeID = "author_name",
+      fontSize = 20,
+      Group = input$group,
+      Nodesize = "total_cnt_publications",
+      radiusCalculation = JS("Math.sqrt(d.nodesize)+6"),
+      linkDistance = JS("function(d){return 100/(d.value)}"),
+      linkWidth = JS("function(d) { return Math.pow(d.value, 2); }"),
+      clickAction = on_node_click,
+      zoom = TRUE,
+      legend = TRUE,
+      colourScale = JS("d3.scaleOrdinal(d3.schemeCategory10);")
+    )
+  )
 
   number_of_nodes <- reactive({
-    length(filtered_author_df())
+    nrow(filtered_author_df())
   })
 
   output$selected_author_chart <- renderPlot(
@@ -95,22 +112,15 @@ server <- function(input, output) {
   )
 
   output$text <- renderText({
-    var <- paste(
-      "Your current options are: \n",
-      "Authors: ", input$authors, "\n",
-      "Number of neighbors: ", input$neighbors, "\n",
-      "Subject filter: ", input$subject_filter, "\n",
-      "Group by: ", input$group
-    )
-
-    if (number_of_nodes() > 100) {
-      paste("Graph too large. Please choose less than 10,000 nodes. \n", var)
+    num = number_of_nodes()
+    if (num > input$max_num_nodes) {
+      paste("Graph too large. You have selected ", num, " nodes. Please choose less than ", input$max_num_nodes, "nodes. \n")
     }
-    else if (number_of_nodes() == 0) {
-      paste("No nodes selected.\n", var)
+    else if (num == 0) {
+      paste("No nodes selected.\n")
     }
     else {
-      paste("You have selected ", number_of_nodes(), " nodes.\n", var)
+      paste("You have selected ", num, " nodes.\n")
     }
   })
 }
@@ -128,7 +138,7 @@ ui <- dashboardPage(
                    choices = full_author_df$author_name,
                    multiple = TRUE,
                    options = list(
-                     placeholder = "Ashimov S. M.",
+                     placeholder = "Select authors.",
                      onInitialize = I('function() {this.setValue("Ashimov S. M.");}')
                    )
     ),
@@ -172,21 +182,29 @@ ui <- dashboardPage(
     # Input: Group by
     
     selectInput("group",
-                label = "Select color idiom",
+                label = "Group by",
                 choices = list(
                   "Selected Authors" = "selected",
                   "Subject area" = "category_main",
                   "E-mail domain" = "email_domain_end"
                 ),
                 selected = "selected"
-    )
+    ),
+    
+    h3("Settings"),
+    
+    numericInput(inputId = "max_num_nodes",
+                 label = "Max number of nodes (Apply caution!)",
+                 value = 1000,
+                 min = 1,
+                 step = 100)
   ),
   
   # Main panel for displaying outputs ----
   dashboardBody(
     verticalLayout(
       h1("Acadamic Co-Authoring"),
-      h2("Visualizing the inherent network of the Arxiv Dataset"),
+      h2("Visualizing the implicit network of the Arxiv Dataset"),
       forceNetworkOutput(outputId = "net"),
       verbatimTextOutput("text"),
       
