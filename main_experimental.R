@@ -89,10 +89,11 @@ filter_out_small_connected_components <- function(network_df, author_df, min_com
     return(filtered_author_df)
 }
 
-full_network_df <- read_csv("intermediate/preprocessed_data.csv")
-full_author_df <- read_csv("intermediate/authors_joined.csv")
+full_network_df <- read_csv("intermediate/links.csv")
+full_author_df <- read_csv("intermediate/authors.csv")
 full_author_df$idx_1 <- seq.int(nrow(full_author_df))  # igraph needs 1 index nodes
 full_author_df$idx_0 <- full_author_df$idx_1 - 1 # networkD3 needs 0 indexed nodes
+full_author_df$selected <- rep("Unselected", nrow(full_author_df))
 
 full_joined <- join_links_and_nodes(full_network_df, full_author_df)
 
