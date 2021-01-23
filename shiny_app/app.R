@@ -86,9 +86,9 @@ server <- function(input, output) {
     length(filtered_author_df())
   })
 
-  # output$selected_author_chart <- renderPlot(
-  #   make_author_terms_count_plot(input$authors)
-  # )
+  output$selected_author_chart <- renderPlot(
+    make_author_terms_count_plot(input$authors)
+  )
 
   output$clicked_node_chart <- renderPlot(
     make_author_terms_count_plot(input$clicked_node_name)
@@ -98,6 +98,8 @@ server <- function(input, output) {
     var <- paste(
       "Your current options are: \n",
       "Authors: ", input$authors, "\n",
+      "authors is of type", typeof(input$authors), "\n",
+      "authors is of class", class(input$authors), "\n",
       "Number of neighbors: ", input$neighbors, "\n",
       "Subject filter: ", input$subject_filter, "\n",
       "Group by: ", input$group
@@ -122,6 +124,7 @@ ui <- dashboardPage(
   # Sidebar panel for inputs ----
   dashboardSidebar(
     h3("Apply filters"),
+
     selectizeInput("authors",
       label = "Select Authors",
       choices = full_author_df$author_name,
@@ -188,11 +191,10 @@ ui <- dashboardPage(
       h2("Visualizing the inherent network of the Arxiv Dataset"),
       forceNetworkOutput(outputId = "net"),
       # verbatimTextOutput("text"),
-      plotOutput("clicked_node_chart")
-      # splitLayout(
-      #   plotOutput("selected_author_chart"),
-      #   plotOutput("clicked_node_chart")
-      # )
+      splitLayout(
+        plotOutput("selected_author_chart"),
+        plotOutput("clicked_node_chart")
+      )
     )
   )
 )

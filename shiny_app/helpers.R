@@ -83,16 +83,29 @@ make_author_terms_count_plot <- function(lookup_author_name) {
       theme_void())
   }
   at_df <- full_author_terms_count_df %>% filter(
-    author_name == lookup_author_name
+    author_name %in% lookup_author_name
   )
+
   if (nrow(at_df) == 0) {
     return(ggplot() +
       theme_void())
   }
 
-  return(ggplot(head(at_df, 10), aes(y = reorder(term, count), x = count)) +
+  if (length(lookup_author_name > 1)) {
+    at_df <- at_df %>%
+      group_by(term) %>%
+      summarise(
+        count = sum(count)
+      )
+  }
+
+  at_df <- at_df %>%
+    arrange(desc(count)) %>%
+    slice_head(n = 20)
+
+  return(ggplot(at_df, aes(y = term, x = count)) +
     geom_col() +
-    labs(title = author_name))
+    labs(title = paste0(lookup_author_name, collapse = ", ")))
 }
 
 
