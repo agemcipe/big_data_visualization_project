@@ -153,8 +153,6 @@ make_compare_author_chart <- function(selected_authors, clicked_author) {
     filter(num_author > (num_authors / 2)) %>%
     select(term)
 
-  # at_df <- at_df %>% filter(term %in% terms_to_display$term)
-
   at_df <- tidyr::crossing(authors, terms_to_display) %>%
     rename(author_name = authors) %>%
     left_join(at_df) %>%
