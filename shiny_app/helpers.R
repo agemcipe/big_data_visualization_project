@@ -98,8 +98,8 @@ make_author_terms_count_plot <- function(author_name) {
 
 
 #### Load and prepare full dfs of links and nodes
-full_network_df <- read_csv("data/preprocessed_data.csv")
-full_author_df <- read_csv("data/authors_joined.csv")
+full_network_df <- read_csv("data/links.csv")
+full_author_df <- read_csv("data/authors.csv")
 full_author_df$idx_1 <- seq.int(nrow(full_author_df)) # igraph needs 1 index nodes
 full_author_df$idx_0 <- full_author_df$idx_1 - 1 # networkD3 needs 0 indexed nodes
 

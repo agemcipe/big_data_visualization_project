@@ -37,7 +37,7 @@ server <- function(input, output) {
       return(subgraph_author_df())
     }
     filtered_author_df <- subgraph_author_df() %>% filter(
-      categories_first %in% input$subject_filter
+      category_main %in% input$subject_filter
     )
   })
 
@@ -147,7 +147,7 @@ ui <- fluidPage(
       selectizeInput(
         inputId = "subject_filter",
         label = "Filter by subject area",
-        choices = full_author_df$categories_first,
+        choices = full_author_df$category_main,
         multiple = TRUE
       ),
 
@@ -166,10 +166,10 @@ ui <- fluidPage(
       selectInput("group",
         label = "Select color idiom",
         choices = list(
-          "Subject area" = "categories_first", "E-mail domain" = "email_domain",
+          "Subject area" = "category_main", "E-mail domain" = "email_domain",
           "Affilitation" = "affiliation"
         ),
-        selected = "categories_first"
+        selected = "category_main"
       ),
       width = 2
     ),
