@@ -70,6 +70,23 @@ prepare_final_links <- function(network_df, author_df, for_igraph = FALSE) {
     return(links_and_nodes)
 }
 
+group_email_domain_endings <- function(author_df){
+    if(n_distinct(author_df$email_domain_end) < 10) {return(author_df)}
+    
+    save <- author_df %>% 
+        group_by(email_domain_end) %>% 
+        summarise(count=n()) %>% 
+        arrange(desc(count)) %>%
+        filter(email_domain_end != "\'N.A.\'")
+    
+    
+    sparse_endings <- unique(tail(save$email_domain_end, -9))
+    author_df <- author_df %>%
+        mutate(email_domain_end = replace(email_domain_end, email_domain_end %in% sparse_endings,"\'Diverse\'"))
+    
+    return(author_df)
+}
+
 filter_out_small_connected_components <- function(network_df, author_df, min_component_size) {
     network_df <- prepare_final_links(network_df, author_df, for_igraph = TRUE)[[1]]
     
@@ -111,6 +128,7 @@ order_of_neighborhood = 5
 
 filtered_author_df2 <- filter_by_author_and_neighbors(full_author_df, authors, order_of_neighborhood, full_graph)
 
+
 # network_df <- full_network_df
 # author_df <- filtered_author_df2
 # min_component_size <- 5
@@ -132,13 +150,15 @@ filtered_author_df2 <- filter_by_author_and_neighbors(full_author_df, authors, o
 #     author_df$membership %in% which(com$csize > min_component_size),
 # ]
 
-filtered_author_df <- filter_out_small_connected_components(full_network_df, filtered_author_df2, 5)
+filtered_author_df3 <- filter_out_small_connected_components(full_network_df, filtered_author_df2, 5)
+
+filtered_author_df <- group_email_domain_endings(filtered_author_df3)
 
 links_and_nodes <- prepare_final_links(full_network_df, filtered_author_df)
 
-ColourScale <- 'd3.scaleOrdinal()
-            .domain(["cs", "stat"])
-           .range(["#FF6900", "#694489"]);'
+# ColourScale <- 'd3.scaleOrdinal()
+#             .domain(["cs", "stat"])
+#            .range(["#FF6900", "#694489"]);'
 
 force_network <- forceNetwork(
     Links = links_and_nodes$links,
@@ -147,7 +167,7 @@ force_network <- forceNetwork(
     Target = "idx.y",
     Value = "cnt_publications",
     NodeID = "author_name",
-    Group = "categories_first",
+    Group = "email_domain_end",
     # Nodesize = "auth_cnt_publications",
     # radiusCalculation = JS("Math.sqrt(d.nodesize)+6"),
     # linkDistance = JS("function(d){return 100/(d.value)}"),

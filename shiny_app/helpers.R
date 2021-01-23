@@ -33,6 +33,23 @@ filter_by_author_and_neighbors <- function(author_df, authors, order, full_graph
   return(filtered_author_df)
 }
 
+group_email_domain_endings <- function(author_df){
+  if(n_distinct(author_df$email_domain_end) <= 10) {return(author_df)}
+  
+  save <- author_df %>% 
+    group_by(email_domain_end) %>% 
+    summarise(count=n(), .groups = 'drop') %>% 
+    arrange(desc(count)) %>%
+    filter(email_domain_end != "\'N.A.\'")
+  
+  
+  sparse_endings <- unique(tail(save$email_domain_end, -8))
+  new_author_df <- author_df %>%
+    mutate(email_domain_end = replace(email_domain_end, email_domain_end %in% sparse_endings,"\'Diverse\'"))
+  
+  return(new_author_df)
+}
+
 prepare_final_links <- function(network_df, author_df, for_igraph = FALSE) {
   final_network_df <- network_df[
     (network_df$author_id_x %in% author_df$author_id) |
@@ -108,7 +125,7 @@ full_author_df$idx_1 <- seq.int(nrow(full_author_df)) # igraph needs 1 index nod
 full_author_df$idx_0 <- full_author_df$idx_1 - 1 # networkD3 needs 0 indexed nodes
 full_author_df$selected <- rep("Unselected", nrow(full_author_df))
 full_author_df <- full_author_df %>% 
-  mutate(email_domain_end = replace_na(email_domain_end,"N.A."))
+  mutate(email_domain_end = replace_na(email_domain_end,"\'N.A.\'"))
 
 full_joined <- join_links_and_nodes(full_network_df, full_author_df)
 
