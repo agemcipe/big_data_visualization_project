@@ -43,7 +43,7 @@ def load_arxiv_json_to_df(filepath, nrows, offset=0) -> pd.DataFrame:
     df = df[(2 < df["author_name"].str.len()) & (df["author_name"].str.len() < 40)]
 
     # assign author id
-    # df["author_id"] = pd.factorize(df["author_name"])[0]
+    df["author_id"] = pd.factorize(df["author_name"])[0]
     return df
 
 
@@ -66,9 +66,9 @@ def create_author_df(df):
 
     # mode of category
     author_df = (
-        # author_df.groupby(["author_id", "author_name", "cnt_publications_total"])[
-        #     "category", "category_main"
-        # ]
+        author_df.groupby(["author_id", "author_name", "cnt_publications_total"])[
+            "category", "category_main"
+        ]
         author_df.groupby(["author_name", "cnt_publications_total"])[
             "category", "category_main"
         ]
@@ -78,7 +78,7 @@ def create_author_df(df):
 
     author_df = author_df[
         [
-            # "author_id",
+            "author_id",
             "author_name",
             "category_main",
             "category",
@@ -93,14 +93,11 @@ def create_author_df(df):
 
 
 def create_link_df(df):
-    # df = df[["id", "author_id"]]
     df = df[["id", "author_name"]]
     link_df = (
         pd.merge(df, df, how="inner", on="id")  # join df onto itself
-        # .pipe(lambda m_df: m_df.loc[m_df["author_id_x"] < m_df["author_id_y"]])
-        # .groupby(["author_id_x", "author_id_y"])[["id"]]
-        .pipe(lambda m_df: m_df.loc[m_df["author_name_x"] < m_df["author_name_y"]])
-        .groupby(["author_name_x", "author_name_y"])[["id"]]
+        .pipe(lambda m_df: m_df.loc[m_df["author_id_x"] < m_df["author_id_y"]])
+        .groupby(["author_id_x", "author_id_y"])[["id"]]
         .count()
         .rename({"id": "cnt_publications"}, axis=1)
         .sort_values(by="cnt_publications", ascending=False)
