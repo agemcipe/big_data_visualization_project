@@ -52,24 +52,42 @@ def create_author_df(df):
     author_df = (
         df.assign(categories=lambda df: df["categories"].str.split(" "))
         .explode("categories")
-        .rename(columns={"categories": "category_specific"})
+        .rename(columns={"categories": "category"})
     )
 
     author_df["category_main"] = (
-        author_df["category_specific"].str.split(".").map(lambda x: x[0])
+        author_df["category"].str.split(".").map(lambda x: x[0])
     )
 
     # total number of publications per author
+    author_df = author_df.groupby(["author_name", "category", "category_main"])[
+        "id"
+    ].transform(lambda x: x.nunique())
+
+    # mode of category
     author_df = (
-        author_df.groupby(["author_name", "category_specific", "category_main"])["id"]
-        .nunique()
+        # author_df.groupby(["author_id", "author_name", "cnt_publications_total"])[
+        #     "category", "category_main"
+        # ]
+        author_df.groupby(["author_name", "cnt_publications_total"])[
+            "category", "category_main"
+        ]
+        .apply(pd.DataFrame.mode)
         .reset_index()
-        .rename(columns={"id": "cnt_publications"})
     )
 
     author_df = author_df[
-        ["author_name", "category_main", "category_specific", "cnt_publications"]
+        [
+            # "author_id",
+            "author_name",
+            "category_main",
+            "category",
+            "cnt_publications_total",
+        ]
     ]
+
+    # we might still have duplicates since mode can return multiple rows per group
+    author_df = author_df.drop_duplicates(subset=["author_name"])
 
     return author_df
 
@@ -91,3 +109,8 @@ def create_link_df(df):
 
     return link_df
 
+
+def join_arxiv_data_and_scholar_scraping(arxiv_author_df, scholar_author_df):
+    return arxiv_author_df.merge(
+        scholar_author_df, how="left", left_on="author_name", right_on="search_term"
+    )

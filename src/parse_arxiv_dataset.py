@@ -11,7 +11,7 @@ ROOT = HERE.parent
 
 nrows_per_batch = 20_000
 num_batches = 10
-offset = 0
+starting_offset = 0
 save_intermediate_files = False
 
 if __name__ == "__main__":
@@ -49,6 +49,7 @@ if __name__ == "__main__":
 
     authors_df = None
     links_df = None
+    offset = starting_offset
     for i in range(num_batches):
 
         print(
@@ -93,13 +94,17 @@ if __name__ == "__main__":
     print("Done Batch Processing")
     print("Aggregating dataframes")
 
+    file_name_ext = f"{starting_offset}_{offset}"
+
     authors_df = (
         authors_df.groupby(["author_name", "category_main", "category_specific"])
         .agg({"cnt_publications": "sum"})
         .reset_index()
     )
     authors_df.to_csv(
-        base_output_dir / "authors_not_aggregated.csv", header=True, index=False
+        base_output_dir / f"authors_not_aggregated_{file_name_ext}.csv",
+        header=True,
+        index=False,
     )
 
     # aggregate author df
@@ -122,7 +127,11 @@ if __name__ == "__main__":
     # we might still have duplicates since mode can return multiple rows per group
     authors_df = authors_df.drop_duplicates(subset=["author_name"])
 
-    authors_df.to_csv(base_output_dir / "authors.csv", header=True, index=False)
+    authors_df.to_csv(
+        base_output_dir / f"authors_starting_{file_name_ext}.csv",
+        header=True,
+        index=False,
+    )
     print("Total number of unique authors:", len(authors_df))
 
     links_df = (
@@ -131,5 +140,7 @@ if __name__ == "__main__":
         .reset_index()
     )
 
-    links_df.to_csv(base_output_dir / "links.csv", header=True, index=False)
+    links_df.to_csv(
+        base_output_dir / f"links_{file_name_ext}.csv", header=True, index=False
+    )
     print("Total number of links:", len(links_df))
