@@ -26,10 +26,12 @@ filter_by_author_and_neighbors <- function(author_df, authors, order, full_graph
   filtered_author_df <- author_df %>% filter(
     idx_1 %in% filtered_idx_1
   )
-  filtered_author_df <- filtered_author_df %>% 
-    mutate(selected = replace(selected, 
-                              (author_name %in% authors) | (name %in% authors),
-                              "Selected"))
+  filtered_author_df <- filtered_author_df %>%
+    mutate(selected = replace(
+      selected,
+      (author_name %in% authors) | (name %in% authors),
+      "Selected"
+    ))
   return(filtered_author_df)
 }
 
@@ -75,26 +77,19 @@ filter_out_small_connected_components <- function(network_df, author_df, min_com
 
 ### helpers for terms count
 
-all_files <- list.files(
-  "/home/agemcipe/personal_dump/big_data_visualization_project/intermediate/author_terms_count/",
-  full.names = TRUE
-)
-
-read_author_terms_count <- function(author_name) {
-  clean_author_name <- gsub("[^[:alnum:] ]", "_", author_name)
-  read_csv(
-    sample(all_files, 1),
-  )
-}
-
-make_author_terms_count_plot <- function(author_name) {
-  if (is.null(author_name)) {
-    return(ggplot(mpg, aes(class)) +
-      geom_bar() +
-      labs(title = author_name))
+make_author_terms_count_plot <- function(lookup_author_name) {
+  if (is.null(lookup_author_name)) {
+    return(ggplot() +
+      theme_void())
   }
-  print(author_name)
-  at_df <- read_author_terms_count(author_name)
+  at_df <- full_author_terms_count_df %>% filter(
+    author_name == lookup_author_name
+  )
+  if (nrow(at_df) == 0) {
+    return(ggplot() +
+      theme_void())
+  }
+
   return(ggplot(head(at_df, 10), aes(y = reorder(term, count), x = count)) +
     geom_col() +
     labs(title = author_name))
@@ -104,11 +99,16 @@ make_author_terms_count_plot <- function(author_name) {
 #### Load and prepare full dfs of links and nodes
 full_network_df <- read_csv("data/links.csv")
 full_author_df <- read_csv("data/authors.csv")
-full_author_df$idx_1 <- seq.int(nrow(full_author_df)) # igraph needs 1 index nodes
-full_author_df$idx_0 <- full_author_df$idx_1 - 1 # networkD3 needs 0 indexed nodes
+full_author_terms_count_df <- read_csv("data/author_terms_count.csv")
+
+# igraph needs 1 index nodes
+full_author_df$idx_1 <- seq.int(nrow(full_author_df))
+# networkD3 needs 0 indexed nodes
+full_author_df$idx_0 <- full_author_df$idx_1 - 1
+
 full_author_df$selected <- rep("Unselected", nrow(full_author_df))
-full_author_df <- full_author_df %>% 
-  mutate(email_domain_end = replace_na(email_domain_end,"N.A."))
+full_author_df <- full_author_df %>%
+  mutate(email_domain_end = replace_na(email_domain_end, "N.A."))
 
 full_joined <- join_links_and_nodes(full_network_df, full_author_df)
 

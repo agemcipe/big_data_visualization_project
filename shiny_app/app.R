@@ -9,7 +9,6 @@ source("helpers.R")
 on_node_click <- 'Shiny.setInputValue("clicked_node_name", d.name, {priority: "event"});'
 
 
-
 #### Define server logic required to draw output
 server <- function(input, output) {
 
@@ -54,7 +53,7 @@ server <- function(input, output) {
     links_and_nodes <- prepare_final_links(full_network_df, filtered_author_df())
     links_and_nodes$links
   })
-  
+
   # ColourScale <- reactive({
   #   if(input$group == "selected"){
   #     'd3.scaleOrdinal()
@@ -79,7 +78,7 @@ server <- function(input, output) {
     linkWidth = JS("function(d) { return Math.pow(d.value, 2); }"),
     clickAction = on_node_click,
     zoom = TRUE,
-    legend = TRUE# ,
+    legend = TRUE # ,
     # colourScale = JS(ColourScale())
   ))
 
@@ -87,9 +86,10 @@ server <- function(input, output) {
     length(filtered_author_df())
   })
 
-  output$selected_author_chart <- renderPlot(
-    make_author_terms_count_plot(input$authors)
-  )
+  # output$selected_author_chart <- renderPlot(
+  #   make_author_terms_count_plot(input$authors)
+  # )
+
   output$clicked_node_chart <- renderPlot(
     make_author_terms_count_plot(input$clicked_node_name)
   )
@@ -117,22 +117,21 @@ server <- function(input, output) {
 
 # Define UI for app that draws a histogram ----
 ui <- dashboardPage(
-  
   dashboardHeader(title = "Dashboard"),
 
   # Sidebar panel for inputs ----
   dashboardSidebar(
     h3("Apply filters"),
     selectizeInput("authors",
-                   label = "Select Authors",
-                   choices = full_author_df$author_name,
-                   multiple = TRUE,
-                   options = list(
-                     placeholder = "Ashimov S. M.",
-                     onInitialize = I('function() {this.setValue("Ashimov S. M.");}')
-                   )
+      label = "Select Authors",
+      choices = full_author_df$author_name,
+      multiple = TRUE,
+      options = list(
+        placeholder = "Ashimov S. M.",
+        onInitialize = I('function() {this.setValue("Ashimov S. M.");}')
+      )
     ),
-    
+
     # Input: Slider for the number of neighbors ----
     sliderInput(
       inputId = "neighbors",
@@ -141,14 +140,14 @@ ui <- dashboardPage(
       max = 10,
       value = 2
     ),
-    
+
     # Input: Checkbox whether to include full subgraph
     checkboxInput(
       inputId = "full_subgraph",
       label = "Include full subgraphs containing selected authors",
       value = FALSE
     ),
-    
+
     # Input: Filter by subject area
     selectizeInput(
       inputId = "subject_filter",
@@ -157,7 +156,7 @@ ui <- dashboardPage(
       multiple = TRUE,
       options = list(items = full_author_df$category_main)
     ),
-    
+
     # Input: Filter  small connected components  ----
     sliderInput(
       inputId = "min_comp",
@@ -166,34 +165,34 @@ ui <- dashboardPage(
       max = 10,
       value = 1
     ),
-    
+
     h3("Change aesthetics"),
-    
+
     # Input: Group by
-    
+
     selectInput("group",
-                label = "Select color idiom",
-                choices = list(
-                  "Selected Authors" = "selected",
-                  "Subject area" = "category_main",
-                  "E-mail domain" = "email_domain_end"
-                ),
-                selected = "selected"
+      label = "Select color idiom",
+      choices = list(
+        "Selected Authors" = "selected",
+        "Subject area" = "category_main",
+        "E-mail domain" = "email_domain_end"
+      ),
+      selected = "selected"
     )
   ),
-  
+
   # Main panel for displaying outputs ----
   dashboardBody(
     verticalLayout(
       h1("Acadamic Co-Authoring"),
       h2("Visualizing the inherent network of the Arxiv Dataset"),
       forceNetworkOutput(outputId = "net"),
-      verbatimTextOutput("text"),
-      
-      splitLayout(
-        plotOutput("selected_author_chart"),
-        plotOutput("clicked_node_chart")
-      )
+      # verbatimTextOutput("text"),
+      plotOutput("clicked_node_chart")
+      # splitLayout(
+      #   plotOutput("selected_author_chart"),
+      #   plotOutput("clicked_node_chart")
+      # )
     )
   )
 )
