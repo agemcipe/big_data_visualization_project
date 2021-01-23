@@ -127,7 +127,8 @@ make_author_terms_count_plot <- function(lookup_author_name) {
   return(
     ggplot(at_df, aes(y = reorder(term, count), x = count)) +
       geom_col() +
-      labs(title = paste0(lookup_author_name, collapse = ", "))
+      ylab("term") +
+      labs(title = paste0("Word Stem Frequency in Papers by ", paste0(lookup_author_name, collapse = ", ")))
   )
 }
 
@@ -178,7 +179,7 @@ make_compare_author_chart <- function(selected_authors, clicked_author) {
       ) +
       ylab("term") +
       xlab("author_name") +
-      labs(title = "Word Stems used by Authors") +
+      labs(title = "Overlapping Word Stems") +
       theme(panel.background = element_blank())
   )
 }
