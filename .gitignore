@@ -39,9 +39,10 @@ vignettes/*.pdf
 .Renviron
 
 # data directories
-input/
-output/
-intermediate/
+data/
 
 # Log files
 *.log
+
+# Pycache
+__pycache__
