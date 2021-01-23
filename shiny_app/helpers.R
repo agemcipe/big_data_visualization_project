@@ -103,9 +103,13 @@ make_author_terms_count_plot <- function(lookup_author_name) {
     arrange(desc(count)) %>%
     slice_head(n = 20)
 
-  return(ggplot(at_df, aes(y = term, x = count)) +
-    geom_col() +
-    labs(title = paste0(lookup_author_name, collapse = ", ")))
+  print(at_df)
+
+  return(
+    ggplot(at_df, aes(y = reorder(term, count), x = count)) +
+      geom_col() +
+      labs(title = paste0(lookup_author_name, collapse = ", "))
+  )
 }
 
 
