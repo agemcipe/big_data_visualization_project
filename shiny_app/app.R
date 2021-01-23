@@ -94,6 +94,10 @@ server <- function(input, output) {
     make_author_terms_count_plot(input$clicked_node_name)
   )
 
+  output$compare_author_chart <- renderPlot(
+    make_compare_author_chart(input$authors, input$clicked_node_name)
+  )
+
   output$text <- renderText({
     var <- paste(
       "Your current options are: \n",
@@ -193,6 +197,7 @@ ui <- dashboardPage(
       # verbatimTextOutput("text"),
       splitLayout(
         plotOutput("selected_author_chart"),
+        plotOutput("compare_author_chart"),
         plotOutput("clicked_node_chart")
       )
     )

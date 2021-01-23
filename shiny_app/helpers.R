@@ -1,3 +1,5 @@
+library(tidyr)
+
 #### Define functions
 join_links_and_nodes <- function(links_df, author_df) {
   joined <- links_df %>%
@@ -103,8 +105,6 @@ make_author_terms_count_plot <- function(lookup_author_name) {
     arrange(desc(count)) %>%
     slice_head(n = 20)
 
-  print(at_df)
-
   return(
     ggplot(at_df, aes(y = reorder(term, count), x = count)) +
       geom_col() +
@@ -112,6 +112,57 @@ make_author_terms_count_plot <- function(lookup_author_name) {
   )
 }
 
+make_compare_author_chart <- function(selected_authors, clicked_author) {
+  authors <- c(selected_authors, clicked_author)
+  num_authors <- length(c(selected_authors, clicked_author))
+
+  if (is.null(selected_authors) || (num_authors < 2)) {
+    return(ggplot() +
+      theme_void())
+  }
+
+  at_df <- full_author_terms_count_df %>% filter(
+    author_name %in% c(selected_authors, clicked_author)
+  )
+
+  # Filter only words that are used by more than half of the authors
+
+  terms_to_display <- at_df %>%
+    group_by(term) %>%
+    summarise(num_author = n_distinct(author_name)) %>%
+    filter(num_author > (num_authors / 2)) %>%
+    select(term)
+
+  # at_df <- at_df %>% filter(term %in% terms_to_display$term)
+
+  at_df <- tidyr::crossing(authors, terms_to_display) %>%
+    rename(author_name = authors) %>%
+    left_join(at_df) %>%
+    replace_na(list(count = 0)) %>%
+    select("author_name", "term", "count")
+
+
+  if (nrow(at_df) == 0) {
+    return(ggplot() +
+      theme_void())
+  }
+
+  return(
+    ggplot(at_df, aes(
+      x = as.factor(author_name),
+      y = reorder(term, desc(term)),
+      fill = count
+    )) +
+      geom_tile(colour = "white") +
+      scale_fill_gradient(
+        high = "#00a2ff", low = "#ffffff", limits = c(0, NA)
+      ) +
+      ylab("term") +
+      xlab("author_name") +
+      labs(title = "Word Stems used by Authors") +
+      theme(panel.background = element_blank())
+  )
+}
 
 #### Load and prepare full dfs of links and nodes
 full_network_df <- read_csv("data/links.csv")
