@@ -65,7 +65,9 @@ server <- function(input, output) {
       need(nrow(final_author_df) != 0, "You have selected none nodes or more than max number of nodes. Please choose different filter options.")
     )
     links_and_nodes <- prepare_final_links(full_network_df, final_author_df)
-
+    validate(
+      need(nrow(links_and_nodes$links) != 0, "Your network has only one node. Please select more nodes."))
+    return(links_and_nodes)
   })
 
   ColourScale <- reactive({

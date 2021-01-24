@@ -80,16 +80,20 @@ prepare_final_links <- function(network_df, author_df, for_igraph = FALSE) {
 filter_out_small_connected_components <- function(network_df, author_df, min_component_size) {
   network_df <- prepare_final_links(network_df, author_df, for_igraph = TRUE)[[1]]
 
-  head(network_df)
   # igraph nodes have to be 1 indexed!
   g <- igraph::graph_from_edgelist(as.matrix(network_df[, c("idx.x", "idx.y")]), directed = FALSE)
 
   com <- components(g)
   # hist(component_distribution(g, cumulative = FALSE, mul.size = TRUE))
 
-
-  author_df$membership <- com$membership
-
+  if(length(com$membership) == 0){
+    author_df$membership <- rep(1, nrow(author_df))
+    return(author_df)
+  }
+  else{
+    author_df$membership <- com$membership
+    
+  }
   filtered_author_df <- author_df[
     author_df$membership %in% which(com$csize >= min_component_size),
   ]
