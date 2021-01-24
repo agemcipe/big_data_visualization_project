@@ -68,14 +68,14 @@ server <- function(input, output) {
 
   })
 
-  # ColourScale <- reactive({
-  #   if(input$group == "selected"){
-  #     'd3.scaleOrdinal()
-  #           .domain(["Selected", "Unselected"])
-  #          .range(["#FF6900", "#694489"]);'
-  #   }
-  #   else {}
-  # })
+  ColourScale <- reactive({
+    if(input$group == "selected"){
+      'd3.scaleOrdinal()
+            .domain(["Selected", "Unselected"])
+           .range(["#ff7f0e", "#1f77b4"]);'
+    }
+    else {"d3.scaleOrdinal(d3.schemeCategory10);"}
+  })
 
   output$net <- renderForceNetwork(
     forceNetwork(
@@ -94,7 +94,7 @@ server <- function(input, output) {
       clickAction = on_node_click,
       zoom = TRUE,
       legend = TRUE,
-      colourScale = JS("d3.scaleOrdinal(d3.schemeCategory10);")
+      colourScale = JS(ColourScale())
     )
   )
 
