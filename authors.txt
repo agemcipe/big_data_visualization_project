@@ -1,0 +1,10 @@
+Jonathan Haas
+C3FFG17GP Till_Niklas Überrück-Fries 999933 9000117000 6
+
+!!!!! DELETE !!!!!
+authors.txt. ASCII file with the personal data of the authors of the exercise.
+Each line will contain the following four strings separated by blanks (spaces or tabs): ID
+or passport number, surname, name and university registration number. Hyphenated
+names and surnames should joined with the underline character ( ). Do not use blanks
+in the middle of names or surnames.
+Example: P12456212F La_Torre Maria_Dolores 910347
