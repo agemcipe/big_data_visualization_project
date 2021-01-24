@@ -124,11 +124,17 @@ make_author_terms_count_plot <- function(lookup_author_name) {
     arrange(desc(count)) %>%
     slice_head(n = 20)
 
+  if (length(lookup_author_name) > 2) {
+    title_ending <- "Selected Authors"
+  } else {
+    title_ending <- paste0(lookup_author_name, collapse = ", ")
+  }
+
   return(
     ggplot(at_df, aes(y = reorder(term, count), x = count)) +
       geom_col() +
       ylab("term") +
-      labs(title = paste0("Word Stem Frequency in Papers by ", paste0(lookup_author_name, collapse = ", ")))
+      labs(title = paste0("Word Stem Frequency in Papers by ", title_ending))
   )
 }
 
@@ -164,6 +170,10 @@ make_compare_author_chart <- function(selected_authors, clicked_author) {
     return(ggplot() +
       theme_void())
   }
+
+  at_df <- at_df %>%
+    arrange(desc(count)) %>%
+    slice_head(n = 25)
 
   return(
     ggplot(at_df, aes(
