@@ -42,7 +42,6 @@ server <- function(input, output) {
   })
 
   filtered_author_df <- reactive({
-    
     validate(
       need(nrow(filtered_by_subject_author_df()) != 0, "You have selected 0 nodes. Please choose different filter options.")
     )
@@ -56,14 +55,14 @@ server <- function(input, output) {
   links <- reactive({
     final_author_df = filtered_author_df()
     validate(
-      need(nrow(final_author_df) > input$max_num_nodes, cat('You have selected', nrow(filtered_author_df),'nodes. Please select less than ', input$max_num_nodes, ' nodes.'))
+      need(nrow(final_author_df) <= input$max_num_nodes, cat('You have selected', nrow(final_author_df),'nodes. Please select less than', input$max_num_nodes, 'nodes.'))
     )
     if(nrow(final_author_df) > input$max_num_nodes) {
-      stop("Too many nodes.")
-      # final_author_df <- filter(author_name %in% c(''))
+      # stop(safeError("Too many nodes."))
+      final_author_df <- final_author_df %>% filter(author_name %in% c(''))
     }
     validate(
-      need(nrow(final_author_df) != 0, "You have selected 0 nodes. Please choose different filter options.")
+      need(nrow(final_author_df) != 0, "You have selected none nodes or more than max number of nodes. Please choose different filter options.")
     )
     links_and_nodes <- prepare_final_links(full_network_df, final_author_df)
 
@@ -207,7 +206,7 @@ ui <- dashboardPage(
   # Main panel for displaying outputs ----
   dashboardBody(
     verticalLayout(
-      h1("Acadamic Co-Authoring"),
+      h1("Academic Co-Authoring"),
       h2("Visualizing the implicit network of the Arxiv Dataset"),
       forceNetworkOutput(outputId = "net"),
       # verbatimTextOutput("text"),

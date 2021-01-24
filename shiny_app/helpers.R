@@ -116,7 +116,7 @@ make_author_terms_count_plot <- function(lookup_author_name) {
     at_df <- at_df %>%
       group_by(term) %>%
       summarise(
-        count = sum(count)
+        count = sum(count), .groups = "drop"
       )
   }
 
@@ -149,7 +149,7 @@ make_compare_author_chart <- function(selected_authors, clicked_author) {
 
   terms_to_display <- at_df %>%
     group_by(term) %>%
-    summarise(num_author = n_distinct(author_name)) %>%
+    summarise(num_author = n_distinct(author_name), .groups = "drop") %>%
     filter(num_author > (num_authors / 2)) %>%
     select(term)
 
